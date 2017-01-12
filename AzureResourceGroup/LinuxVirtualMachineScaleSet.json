@@ -46,7 +46,19 @@
       "metadata": {
         "description": "Administrator password on all VMs"
       }
-    }
+    },
+      "_artifactsLocation": {
+          "type": "string",
+          "metadata": {
+              "description": "Auto-generated container in staging storage account to receive post-build staging folder upload"
+          }
+      },
+      "_artifactsLocationSasToken": {
+          "type": "securestring",
+          "metadata": {
+              "description": "Auto-generated token to access _artifactsLocation"
+          }
+      }
   },
   "variables": {
     "location": "[resourceGroup().location]",
@@ -84,7 +96,9 @@
     },
     "imageReference": "[variables('osType')]",
     "diagnosticsStorageAccountName": "[variables('uniqueStringArray')[0]]",
-    "ladMetricsResourceId": "[resourceId('Microsoft.Compute/virtualMachineScaleSets', variables('namingInfix'))]"
+    "ladMetricsResourceId": "[resourceId('Microsoft.Compute/virtualMachineScaleSets', variables('namingInfix'))]",
+      "deploy-appScriptFolder": "CustomScripts",
+      "deploy-appScriptFileName": "deploy-app.sh"
   },
   "resources": [
     {
@@ -521,7 +535,22 @@
                     "storageAccountEndPoint": "https://core.windows.net"
                   }
                 }
-              }
+              },
+                {
+                    "name": "deploy-app",
+                    "properties": {
+                        "publisher": "Microsoft.OSTCExtensions",
+                        "type": "CustomScriptForLinux",
+                        "typeHandlerVersion": "1.4",
+                        "autoUpgradeMinorVersion": true,
+                        "settings": {
+                            "fileUris": [
+                                "[concat(parameters('_artifactsLocation'), '/', variables('deploy-appScriptFolder'), '/', variables('deploy-appScriptFileName'), parameters('_artifactsLocationSasToken'))]"
+                            ],
+                            "commandToExecute": "[concat('sh ', variables('deploy-appScriptFileName'))]"
+                        }
+                    }
+                }
             ]
           }
         }
